@@ -7,17 +7,14 @@
  *   pnpm --filter @laundry/api db:seed
  */
 import { PrismaClient } from '@prisma/client';
-import { createHash } from 'node:crypto';
+import bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
-/**
- * Placeholder password hasher so we don't pull bcrypt into Phase 1 deps.
- * Auth module in Phase 2 will replace this with bcrypt/argon2 and re-hash
- * the seed user's password via a migration or a one-off script.
- */
-function placeholderHash(password: string): string {
-  return `placeholder:${createHash('sha256').update(password).digest('hex')}`;
+const BCRYPT_ROUNDS = 12;
+
+async function hashPassword(plain: string): Promise<string> {
+  return bcrypt.hash(plain, BCRYPT_ROUNDS);
 }
 
 async function main(): Promise<void> {
@@ -47,18 +44,22 @@ async function main(): Promise<void> {
   console.log(`  locations: ${locationA.name}, ${locationB.name}`);
 
   // ---- Admin user ----
+  // Re-hash on every seed so that moving from the Phase 1 placeholder hash
+  // to real bcrypt happens automatically when devs re-run the seed.
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD ?? 'changeme';
+  const adminHash = await hashPassword(adminPassword);
   const admin = await prisma.user.upsert({
     where: { email: 'admin@laundry.local' },
-    update: {},
+    update: { passwordHash: adminHash },
     create: {
       email: 'admin@laundry.local',
       name: 'Admin',
       role: 'admin',
-      passwordHash: placeholderHash('changeme'),
+      passwordHash: adminHash,
       locationId: locationA.id,
     },
   });
-  console.log(`  admin user: ${admin.email} (password: "changeme")`);
+  console.log(`  admin user: ${admin.email} (password: "${adminPassword}")`);
 
   // ---- Sample machines ----
   const sampleMachines = [
