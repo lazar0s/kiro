@@ -100,6 +100,8 @@ model User {
   passwordHash  String    @map("password_hash") @db.VarChar(255)
   locationId    String?   @map("location_id") @db.Uuid
   isActive      Boolean   @default(true) @map("is_active")
+  // Bumped on password change / logout-everywhere to invalidate refresh tokens.
+  tokenVersion  Int       @default(0) @map("token_version")
   createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
 
