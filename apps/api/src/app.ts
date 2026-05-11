@@ -8,6 +8,8 @@ import { logger } from './shared/logger.js';
 import { healthRoutes } from './modules/health/health.routes.js';
 import { authRoutes } from './modules/auth/auth.routes.js';
 import { usersRoutes } from './modules/users/users.routes.js';
+import { ordersRoutes } from './modules/orders/orders.routes.js';
+import { pricingRoutes } from './modules/pricing/pricing.routes.js';
 
 /**
  * The API exposes two separate JWT signers:
@@ -61,6 +63,8 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(healthRoutes);
   await app.register(authRoutes);
   await app.register(usersRoutes);
+  await app.register(ordersRoutes);
+  await app.register(pricingRoutes);
 
   // Catch-all for unknown routes — return a clean 404 with JSON.
   app.setNotFoundHandler((req, reply) => {

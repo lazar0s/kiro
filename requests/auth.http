@@ -1,0 +1,39 @@
+### Authentication flow
+# Install "REST Client" (humao.rest-client) if you haven't.
+# Click "Send Request" above any block to fire it.
+
+@base = http://localhost:3000
+
+### 1. Log in as admin
+# Copy the accessToken from the response into the @accessToken variable
+# at the top of orders.http and admin.http.
+# @name login
+POST {{base}}/api/auth/login
+content-type: application/json
+
+{
+  "email": "admin@laundry.local",
+  "password": "changeme"
+}
+
+### 2. Extract tokens from the login response above
+# You can reference {{login.response.body.accessToken}} in other requests
+# if they live in this file. For cross-file use, copy/paste into @accessToken.
+@accessToken = {{login.response.body.accessToken}}
+@refreshToken = {{login.response.body.refreshToken}}
+
+### 3. Who am I? (verifies the access token works)
+GET {{base}}/api/auth/me
+authorization: Bearer {{accessToken}}
+
+### 4. Refresh (rotates the refresh token)
+POST {{base}}/api/auth/refresh
+content-type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+### 5. Logout — bumps tokenVersion, invalidating all outstanding refresh tokens
+POST {{base}}/api/auth/logout
+authorization: Bearer {{accessToken}}

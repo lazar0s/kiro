@@ -1,0 +1,93 @@
+### Admin endpoints — users and pricing
+#
+# Paste an admin access token into @accessToken (from auth.http).
+
+@base = http://localhost:3000
+@accessToken = PASTE_FROM_auth.http
+@locationA = 11111111-1111-1111-1111-111111111111
+
+### ── Users ────────────────────────────────────────────────────────────
+
+### List all users
+GET {{base}}/api/admin/users
+authorization: Bearer {{accessToken}}
+
+### Filter users by role
+GET {{base}}/api/admin/users?role=staff
+authorization: Bearer {{accessToken}}
+
+### Search users by name or email
+GET {{base}}/api/admin/users?search=admin
+authorization: Bearer {{accessToken}}
+
+### Create a staff user
+# @name createStaff
+POST {{base}}/api/admin/users
+authorization: Bearer {{accessToken}}
+content-type: application/json
+
+{
+  "email": "alice@laundry.local",
+  "name": "Alice (staff)",
+  "role": "staff",
+  "password": "staffpass123",
+  "locationId": "{{locationA}}"
+}
+
+### Create a delivery user (needed for out_for_delivery transition)
+# @name createDelivery
+POST {{base}}/api/admin/users
+authorization: Bearer {{accessToken}}
+content-type: application/json
+
+{
+  "email": "dave@laundry.local",
+  "name": "Dave (driver)",
+  "role": "delivery",
+  "password": "driverpass123"
+}
+
+@newStaffId = {{createStaff.response.body.id}}
+@newDriverId = {{createDelivery.response.body.id}}
+
+### Update a user (rename + deactivate + force password reset)
+# Password change bumps tokenVersion → invalidates outstanding refresh tokens.
+PATCH {{base}}/api/admin/users/{{newStaffId}}
+authorization: Bearer {{accessToken}}
+content-type: application/json
+
+{
+  "name": "Alice Updated",
+  "password": "newpassword123"
+}
+
+### Soft-delete a user (isActive=false + tokenVersion bump)
+DELETE {{base}}/api/admin/users/{{newStaffId}}
+authorization: Bearer {{accessToken}}
+
+### ── Pricing ──────────────────────────────────────────────────────────
+
+### List all pricing rows
+# Seed creates 8 rows: 4 cleaning types × 2 speeds (standard, express)
+GET {{base}}/api/admin/pricing
+authorization: Bearer {{accessToken}}
+
+### Update surcharges in bulk
+PUT {{base}}/api/admin/pricing
+authorization: Bearer {{accessToken}}
+content-type: application/json
+
+{
+  "items": [
+    {
+      "cleaningType": "wash_fold",
+      "processingSpeed": "express",
+      "surcharge": 7.50
+    },
+    {
+      "cleaningType": "dry_cleaning",
+      "processingSpeed": "express",
+      "surcharge": 10.00
+    }
+  ]
+}
