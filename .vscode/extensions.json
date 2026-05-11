@@ -1,0 +1,12 @@
+{
+  "recommendations": [
+    "Prisma.prisma",
+    "bradlc.vscode-tailwindcss",
+    "humao.rest-client",
+    "esbenp.prettier-vscode",
+    "ms-azuretools.vscode-docker",
+    "dbaeumer.vscode-eslint",
+    "christian-kohler.path-intellisense",
+    "streetsidesoftware.code-spell-checker"
+  ]
+}
