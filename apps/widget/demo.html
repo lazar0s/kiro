@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Laundry Widget — Demo Host Page</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 40px 20px;
+        font-family: system-ui, sans-serif;
+        background: #f1f5f9;
+        color: #0f172a;
+      }
+      header {
+        max-width: 720px;
+        margin: 0 auto 32px;
+      }
+      header h1 {
+        margin: 0 0 8px;
+      }
+      header p {
+        margin: 0;
+        color: #475569;
+      }
+      main {
+        display: flex;
+        justify-content: center;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Store Website (demo)</h1>
+      <p>
+        This page simulates embedding the <code>&lt;laundry-widget&gt;</code> custom element
+        on a regular marketing site.
+      </p>
+    </header>
+    <main>
+      <laundry-widget api-url="http://localhost:3000" theme-color="#2563eb"></laundry-widget>
+    </main>
+
+    <!--
+      In dev: vite serves the TS entry directly.
+      In production: build with `pnpm --filter @laundry/widget build`
+      then reference dist/laundry-widget.js instead.
+    -->
+    <script type="module" src="/src/widget.ts"></script>
+  </body>
+</html>

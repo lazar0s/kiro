@@ -1,0 +1,229 @@
+// Laundry App — Prisma schema
+// See .kiro/specs/laundry-app/design.md for the data model rationale.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// Enums — keep aligned with packages/shared/src/enums.ts
+// ============================================================================
+
+enum UserRole {
+  admin
+  staff
+  delivery
+}
+
+enum MachineType {
+  washer
+  dryer
+  ironer
+}
+
+enum CleaningType {
+  wash_fold
+  dry_cleaning
+  ironing
+  special
+}
+
+enum ProcessingSpeed {
+  standard
+  express
+}
+
+enum Fulfillment {
+  pickup
+  delivery
+}
+
+enum OrderStatus {
+  received
+  not_started
+  working
+  finished
+  out_for_delivery
+  delivered
+}
+
+enum NotificationChannel {
+  whatsapp
+  email
+  viber
+  in_app
+}
+
+enum NotificationStatus {
+  pending
+  sent
+  failed
+  delivered
+}
+
+enum AlertTrigger {
+  new_order
+  pending_timeout
+  machine_error
+  delivery_delay
+}
+
+// ============================================================================
+// Models
+// ============================================================================
+
+model Location {
+  id         String    @id @default(uuid()) @db.Uuid
+  name       String    @db.VarChar(100)
+  address    String?
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  users            User[]
+  machines         Machine[]
+  ordersProcessing Order[]   @relation("OrderProcessingLocation")
+  ordersPickup     Order[]   @relation("OrderPickupLocation")
+
+  @@map("locations")
+}
+
+model User {
+  id            String    @id @default(uuid()) @db.Uuid
+  email         String    @unique @db.VarChar(255)
+  phone         String?   @db.VarChar(20)
+  name          String    @db.VarChar(100)
+  role          UserRole
+  passwordHash  String    @map("password_hash") @db.VarChar(255)
+  locationId    String?   @map("location_id") @db.Uuid
+  isActive      Boolean   @default(true) @map("is_active")
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  location       Location?    @relation(fields: [locationId], references: [id])
+  assignedOrders Order[]      @relation("OrderAssignedStaff")
+  drivingOrders  Order[]      @relation("OrderAssignedDriver")
+  orderEvents    OrderEvent[]
+
+  @@index([role])
+  @@index([locationId])
+  @@map("users")
+}
+
+model Machine {
+  id            String       @id @default(uuid()) @db.Uuid
+  mieleDeviceId String       @unique @map("miele_device_id") @db.VarChar(100)
+  name          String       @db.VarChar(100)
+  type          MachineType
+  locationId    String       @map("location_id") @db.Uuid
+  isActive      Boolean      @default(true) @map("is_active")
+  createdAt     DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  location Location @relation(fields: [locationId], references: [id])
+  orders   Order[]
+
+  @@index([locationId])
+  @@map("machines")
+}
+
+model Order {
+  id               String           @id @default(uuid()) @db.Uuid
+  trackingCode     String           @unique @map("tracking_code") @db.VarChar(12)
+  customerName     String           @map("customer_name") @db.VarChar(100)
+  customerPhone    String           @map("customer_phone") @db.VarChar(20)
+  customerEmail    String?          @map("customer_email") @db.VarChar(255)
+  cleaningType     CleaningType     @map("cleaning_type")
+  processingSpeed  ProcessingSpeed  @default(standard) @map("processing_speed")
+  fulfillment      Fulfillment      @default(pickup)
+  pickupLocationId String?          @map("pickup_location_id") @db.Uuid
+  deliveryAddress  String?          @map("delivery_address")
+  deliveryLat      Decimal?         @map("delivery_lat") @db.Decimal(10, 7)
+  deliveryLng      Decimal?         @map("delivery_lng") @db.Decimal(10, 7)
+  notes            String?
+  status           OrderStatus      @default(received)
+  locationId      String           @map("location_id") @db.Uuid
+  machineId        String?          @map("machine_id") @db.Uuid
+  assignedStaffId  String?          @map("assigned_staff") @db.Uuid
+  assignedDriverId String?          @map("assigned_driver") @db.Uuid
+  expressSurcharge Decimal          @default(0.00) @map("express_surcharge") @db.Decimal(10, 2)
+  createdAt        DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  processingLocation Location       @relation("OrderProcessingLocation", fields: [locationId], references: [id])
+  pickupLocation     Location?      @relation("OrderPickupLocation", fields: [pickupLocationId], references: [id])
+  machine            Machine?       @relation(fields: [machineId], references: [id])
+  assignedStaff      User?          @relation("OrderAssignedStaff", fields: [assignedStaffId], references: [id])
+  assignedDriver     User?          @relation("OrderAssignedDriver", fields: [assignedDriverId], references: [id])
+  events             OrderEvent[]
+  notifications      Notification[]
+
+  @@index([status])
+  @@index([locationId])
+  @@index([customerPhone])
+  @@index([createdAt])
+  @@map("orders")
+}
+
+model OrderEvent {
+  id          String       @id @default(uuid()) @db.Uuid
+  orderId     String       @map("order_id") @db.Uuid
+  fromStatus  OrderStatus? @map("from_status")
+  toStatus    OrderStatus  @map("to_status")
+  changedById String?      @map("changed_by") @db.Uuid
+  metadata    Json?
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  order     Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  changedBy User? @relation(fields: [changedById], references: [id])
+
+  @@index([orderId])
+  @@index([createdAt])
+  @@map("order_events")
+}
+
+model Notification {
+  id         String              @id @default(uuid()) @db.Uuid
+  orderId    String              @map("order_id") @db.Uuid
+  channel    NotificationChannel
+  recipient  String              @db.VarChar(255)
+  template   String              @db.VarChar(100)
+  status     NotificationStatus  @default(pending)
+  attempts   Int                 @default(0)
+  lastError  String?             @map("last_error")
+  sentAt     DateTime?           @map("sent_at") @db.Timestamptz(6)
+  createdAt  DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([status])
+  @@map("notifications")
+}
+
+model AlertRule {
+  id               String       @id @default(uuid()) @db.Uuid
+  name             String       @db.VarChar(100)
+  triggerType      AlertTrigger @map("trigger_type")
+  thresholdMinutes Int?         @map("threshold_minutes")
+  isActive         Boolean      @default(true) @map("is_active")
+  createdAt        DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([triggerType])
+  @@map("alert_rules")
+}
+
+model Pricing {
+  id              String          @id @default(uuid()) @db.Uuid
+  cleaningType    CleaningType    @map("cleaning_type")
+  processingSpeed ProcessingSpeed @map("processing_speed")
+  basePrice       Decimal?        @map("base_price") @db.Decimal(10, 2)
+  surcharge       Decimal         @default(0.00) @db.Decimal(10, 2)
+  isActive        Boolean         @default(true) @map("is_active")
+  updatedAt       DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([cleaningType, processingSpeed])
+  @@map("pricing")
+}
