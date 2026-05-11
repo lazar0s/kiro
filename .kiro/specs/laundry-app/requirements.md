@@ -39,9 +39,15 @@ A web application for managing laundry orders in a single-store business with tw
 ### FR-1: Order Submission
 - **FR-1.1:** Customers can submit orders via an embeddable widget (iframe/web component)
 - **FR-1.2:** Staff can create orders on behalf of walk-in customers
-- **FR-1.3:** Order fields: customer name, phone number, cleaning type, notes (optional), pickup location (Location A or B)
+- **FR-1.3:** Order fields: customer name, phone number, cleaning type, processing speed, fulfillment method, notes (optional)
 - **FR-1.4:** On submission, system generates a unique tracking code and sends it to the customer
 - **FR-1.5:** Cleaning types include at minimum: wash & fold, dry cleaning, ironing, special items
+- **FR-1.6:** Fulfillment method — customer (or staff on their behalf) selects one of:
+  - **Store pickup:** choose from available store locations (Location A or B)
+  - **Delivery:** share delivery address via Google Maps location picker (stores lat/lng + formatted address)
+- **FR-1.7:** Processing speed — customer selects one of:
+  - **Standard:** normal turnaround time (no surcharge)
+  - **Fast (Express):** expedited processing with a surcharge (amount configurable by admin)
 
 ### FR-2: Task State Machine
 States flow linearly:
@@ -140,15 +146,16 @@ Order received → Not started → Working on it → Finished → Out for delive
 | Miele machines connected to internet | Confirmed | 2 locations |
 | WhatsApp Business account | Active | Already set up |
 | Meta Business verification | Required | For WhatsApp template messages |
+| Google Maps API key | Required | Places Autocomplete + Maps embed for delivery address picker |
 | Domain for hosting | TBD | Needed for OAuth redirect URIs |
 | Email service (SMTP or SES) | TBD | Secondary notification channel |
 
 ---
 
 ## Out of Scope (v1)
-- Live delivery GPS tracking
+- Live driver GPS tracking (delivery address is collected, but no real-time driver location sharing)
 - Customer accounts / login
-- Payment processing
+- Payment processing (surcharge is displayed but payment is handled offline)
 - Multi-store / multi-tenant
 - Viber integration (planned for v2)
 - Mobile native app (responsive web only)

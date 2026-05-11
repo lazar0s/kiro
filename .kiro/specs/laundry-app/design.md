@@ -122,12 +122,19 @@ customer_name   VARCHAR(100) NOT NULL
 customer_phone  VARCHAR(20) NOT NULL
 customer_email  VARCHAR(255)
 cleaning_type   ENUM('wash_fold', 'dry_cleaning', 'ironing', 'special') NOT NULL
+processing_speed ENUM('standard', 'express') NOT NULL DEFAULT 'standard'
+fulfillment     ENUM('pickup', 'delivery') NOT NULL DEFAULT 'pickup'
+pickup_location_id UUID REFERENCES locations(id)      -- set when fulfillment = 'pickup'
+delivery_address TEXT                                  -- formatted address from Google Maps
+delivery_lat    DECIMAL(10, 7)                         -- latitude from Google Maps picker
+delivery_lng    DECIMAL(10, 7)                         -- longitude from Google Maps picker
 notes           TEXT
 status          ENUM('received', 'not_started', 'working', 'finished', 'out_for_delivery', 'delivered') NOT NULL DEFAULT 'received'
-location_id     UUID REFERENCES locations(id) NOT NULL
-machine_id      UUID REFERENCES machines(id)          -- assigned when "working"
+location_id     UUID REFERENCES locations(id) NOT NULL -- processing location (which store handles it)
+machine_id      UUID REFERENCES machines(id)           -- assigned when "working"
 assigned_staff  UUID REFERENCES users(id)
 assigned_driver UUID REFERENCES users(id)
+express_surcharge DECIMAL(10, 2) DEFAULT 0.00          -- surcharge amount if express
 created_at      TIMESTAMPTZ DEFAULT NOW()
 updated_at      TIMESTAMPTZ DEFAULT NOW()
 ```
@@ -165,6 +172,18 @@ trigger_type    ENUM('new_order', 'pending_timeout', 'machine_error', 'delivery_
 threshold_minutes INTEGER                   -- for timeout-based triggers
 is_active       BOOLEAN DEFAULT true
 created_at      TIMESTAMPTZ DEFAULT NOW()
+```
+
+#### `pricing` (admin-configurable surcharges)
+```sql
+id              UUID PRIMARY KEY
+cleaning_type   ENUM('wash_fold', 'dry_cleaning', 'ironing', 'special') NOT NULL
+processing_speed ENUM('standard', 'express') NOT NULL
+base_price      DECIMAL(10, 2)              -- optional, for display purposes
+surcharge       DECIMAL(10, 2) DEFAULT 0.00 -- express surcharge amount
+is_active       BOOLEAN DEFAULT true
+updated_at      TIMESTAMPTZ DEFAULT NOW()
+UNIQUE(cleaning_type, processing_speed)
 ```
 
 ---

@@ -31,13 +31,15 @@
 > Goal: Orders can be created and advanced through all states with full audit trail.
 
 - [ ] 16. Create `POST /api/orders` — public endpoint for order creation (widget + staff), generates tracking_code
-- [ ] 17. Create `GET /api/orders` — list orders with filters (status, location, search by name/phone/code)
+- [ ] 16a. Order creation supports: fulfillment method (pickup location OR delivery address via Google Maps), processing speed (standard/express with surcharge)
+- [ ] 17. Create `GET /api/orders` — list orders with filters (status, location, fulfillment type, search by name/phone/code)
 - [ ] 18. Create `GET /api/orders/:id` — full order detail with events timeline
 - [ ] 19. Implement state machine logic — validate transitions, enforce role-transition matrix
 - [ ] 20. Create `PATCH /api/orders/:id/status` — advance order state (validates caller role + allowed transition)
 - [ ] 21. Auto-insert `order_events` row on every state change (from_status, to_status, changed_by, timestamp)
 - [ ] 22. Create `GET /api/track/:code` — public endpoint returning order status + event timestamps (no auth)
 - [ ] 23. Add pagination + sorting to orders list endpoint
+- [ ] 23a. Create `GET /api/admin/pricing` + `PUT /api/admin/pricing` — admin configures express surcharge amounts per cleaning type
 
 ---
 
@@ -59,7 +61,7 @@
 - [ ] 30. Build Login page (email + password form, stores JWT in memory/httpOnly cookie)
 - [ ] 31. Build Dashboard page — Kanban board with columns per status (received, not_started, working, finished, out_for_delivery)
 - [ ] 32. Build Order Card component — shows customer name, cleaning type, time in state, assigned machine
-- [ ] 33. Build Order Detail panel/modal — full timeline, action buttons to advance state, assign machine/driver
+- [ ] 33. Build Order Detail panel/modal — full timeline, action buttons to advance state, assign machine/driver, shows fulfillment method + delivery address on map if applicable
 - [ ] 34. Integrate Socket.IO client — Kanban auto-updates when events arrive
 - [ ] 35. Build Delivery View page — filtered list of "finished" + "out_for_delivery" orders, "confirm delivery" action
 - [ ] 36. Add search + filter bar (status, location, text search)
@@ -115,7 +117,7 @@
 > Goal: A lightweight web component that external store sites can embed for order submission.
 
 - [ ] 64. Set up `apps/widget` — Preact + TypeScript + Vite, builds as single JS bundle
-- [ ] 65. Build order form component (name, phone, cleaning type, notes, location select)
+- [ ] 65. Build order form component (name, phone, cleaning type, processing speed toggle, fulfillment method: pickup location select OR delivery address via Google Maps Places Autocomplete / map picker)
 - [ ] 66. Build success screen (shows tracking code + link)
 - [ ] 67. Package as Web Component (`<laundry-widget>`) with configurable attributes (API URL, theme color)
 - [ ] 68. Add CORS configuration on API to allow widget origin(s)
