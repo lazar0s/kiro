@@ -1,0 +1,27 @@
+{
+  "name": "laundry-app",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Laundry store management app — staff dashboard, customer widget, Miele integration, multi-channel notifications",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.12.0",
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev --parallel",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "db:generate": "pnpm --filter @laundry/api prisma generate",
+    "db:migrate": "pnpm --filter @laundry/api prisma migrate dev",
+    "db:seed": "pnpm --filter @laundry/api db:seed",
+    "db:studio": "pnpm --filter @laundry/api prisma studio"
+  },
+  "devDependencies": {
+    "turbo": "^2.1.3",
+    "typescript": "^5.6.3",
+    "prettier": "^3.3.3"
+  }
+}
