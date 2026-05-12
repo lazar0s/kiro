@@ -3,6 +3,7 @@ import { env } from './config/env.js';
 import { logger } from './shared/logger.js';
 import { disconnectDatabase } from './shared/database.js';
 import { disconnectRedis } from './shared/redis.js';
+import { initSocket, shutdownSocket } from './shared/socket.js';
 
 async function start(): Promise<void> {
   const app = await buildApp();
@@ -15,9 +16,14 @@ async function start(): Promise<void> {
     process.exit(1);
   }
 
+  // Initialize Socket.IO on the raw HTTP server that Fastify created.
+  // Must be called AFTER listen() so the server is bound.
+  await initSocket(app.server);
+
   const shutdown = async (signal: string): Promise<void> => {
     logger.info(`Received ${signal}, shutting down`);
     try {
+      await shutdownSocket();
       await app.close();
       await disconnectDatabase();
       await disconnectRedis();

@@ -1,12 +1,14 @@
 import type { Order, OrderEvent, Prisma } from '@prisma/client';
 import {
   OrderStatus,
+  SocketEvent,
   UserRole,
   canRoleTransition,
   isValidTransition,
 } from '@laundry/shared';
 import { prisma } from '../../shared/database.js';
 import { generateTrackingCode } from '../../shared/tracking-code.js';
+import { emitOrderEvent } from '../../shared/emit.js';
 import type {
   OrderDetail as OrderDetailDto,
   OrderSummary as OrderSummaryDto,
@@ -78,6 +80,15 @@ export async function createOrder(body: CreateOrderBody): Promise<Order> {
 
         return order;
       });
+
+      // Emit real-time event AFTER the transaction commits.
+      emitOrderEvent(SocketEvent.OrderCreated, {
+        orderId: order.id,
+        trackingCode: order.trackingCode,
+        locationId: order.locationId,
+      });
+
+      return order;
     } catch (err) {
       if (isPrismaUniqueConflict(err, 'tracking_code')) {
         continue; // try a new code
@@ -212,6 +223,15 @@ export async function transitionOrder(params: {
       },
     });
     return { order: updated, event: evt };
+  });
+
+  // Emit real-time event AFTER the transaction commits.
+  emitOrderEvent(SocketEvent.OrderStatusChanged, {
+    orderId: order.id,
+    fromStatus: from,
+    toStatus: params.toStatus,
+    locationId: order.locationId,
+    changedAt: event.createdAt.toISOString(),
   });
 
   return { ok: true, order, event };
